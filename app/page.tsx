@@ -6,7 +6,7 @@ import {
   useWriteContract, 
   useWaitForTransactionReceipt, 
   useAccount, 
-  useConnect, // Import useConnect here properly
+  useConnect, 
   WagmiProvider, 
   createConfig, 
   http 
@@ -22,19 +22,18 @@ import { Rocket, MessageCircle, Wallet, Layers, Link as LinkIcon, CheckCircle2 }
 const config = createConfig({
   chains: [base],
   transports: { [base.id]: http() },
-  connectors: [injected()], // This enables MetaMask/Coinbase Wallet
-  ssr: true, // Fixes hydration issues
+  connectors: [injected()],
+  ssr: true,
 });
 
 const queryClient = new QueryClient();
 
-// REPLACE WITH YOUR REAL ADDRESSES
-const SOCIAL_CONTRACT_ADDRESS = '0x1685288Ac824609262548e485aE0427104e74817';
-const TOKEN_DEPLOYER_ADDRESS = '0x46f67e2C642b0c51A2bcB976458E7eEd8C0CeEEB';
-const NFT_DEPLOYER_ADDRESS = '0x2F85293E2B5e97fB0Cb6Dd630fb2105002E535eb';
-const VIP_PASS_ADDRESS = '0xe0F17A4B633E45199d4D520698BAf32e47cDd9dC';
+// REPLACE WITH YOUR NEW REDEPLOYED ADDRESSES
+const SOCIAL_CONTRACT_ADDRESS = '0xdB21A0bA90906B76d96b26783caF04e9BB0623e4';
+const TOKEN_DEPLOYER_ADDRESS = '0x3A9fc2B695E93d2754da5c832bE91542F81d423a';
+const NFT_DEPLOYER_ADDRESS = '0x0931Cd25fABb8794E948a43829Da3c4d01147E23';
+const VIP_PASS_ADDRESS = '0x19De432E6454c78f96d20afc641264A91fCFE46b';
 
-// --- 2. MAIN WRAPPER ---
 export default function Page() {
   return (
     <WagmiProvider config={config}>
@@ -45,12 +44,10 @@ export default function Page() {
   );
 }
 
-// --- 3. THE UI COMPONENT ---
 function BaseStationUI() {
   const { isConnected, address } = useAccount();
-  const { connect, connectors } = useConnect(); // The correct way to get the connect function
+  const { connect, connectors } = useConnect(); 
   
-  // Fix for "Hydration Error" (Button working on server but not client)
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -63,18 +60,17 @@ function BaseStationUI() {
   const [collectionName, setCollectionName] = useState('');
   const [collectionUri, setCollectionUri] = useState('');
 
-  // Contract Write
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
 
-  // --- ACTIONS ---
+  // --- ACTIONS (UPDATED FEES TO 0.000001) ---
   const handleSocial = (action: string) => {
     writeContract({
       address: SOCIAL_CONTRACT_ADDRESS as `0x${string}`,
       abi: [{"name": "saySomething", "inputs": [{"type":"string"},{"type":"string"}], "outputs": [], "stateMutability": "payable", "type": "function"}],
       functionName: 'saySomething',
       args: [action, `Based ${action}!`],
-      value: parseEther('0.0001'),
+      value: parseEther('0.000001'), // UPDATED FEE
     });
   };
 
@@ -85,7 +81,7 @@ function BaseStationUI() {
       abi: [{"name": "deployToken", "inputs": [{"type":"string"},{"type":"string"},{"type":"uint256"}], "outputs": [], "stateMutability": "payable", "type": "function"}],
       functionName: 'deployToken',
       args: [tokenName, tokenSymbol, BigInt(tokenSupply)],
-      value: parseEther('0.0005'),
+      value: parseEther('0.000001'), // UPDATED FEE
     });
   };
 
@@ -96,7 +92,7 @@ function BaseStationUI() {
       abi: [{"name": "deployCollection", "inputs": [{"type":"string"},{"type":"string"}], "outputs": [], "stateMutability": "payable", "type": "function"}],
       functionName: 'deployCollection',
       args: [collectionUri, collectionName],
-      value: parseEther('0.0005'),
+      value: parseEther('0.000001'), // UPDATED FEE
     });
   };
 
@@ -105,7 +101,7 @@ function BaseStationUI() {
       address: VIP_PASS_ADDRESS as `0x${string}`,
       abi: [{"name": "mint", "inputs": [], "outputs": [], "stateMutability": "payable", "type": "function"}],
       functionName: 'mint',
-      value: parseEther('0.00001'),
+      value: parseEther('0.00001'), // VIP Price (Keep as is or change to 0.000001)
     });
   };
 
@@ -134,10 +130,8 @@ function BaseStationUI() {
             <span className="text-xl font-bold tracking-tight">Base <span className="text-blue-500">Station</span></span>
           </div>
 
-          {/* CONNECT WALLET BUTTON */}
           {mounted && !isConnected ? (
             <button 
-              // Connects to the first available connector (MetaMask/Browser Wallet)
               onClick={() => connect({ connector: connectors[0] })}
               className="bg-white text-black px-6 py-2.5 rounded-full font-bold flex items-center gap-2 hover:bg-gray-200 transition-colors"
             >
@@ -204,7 +198,7 @@ function BaseStationUI() {
               className="bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-8 min-h-[420px]"
             >
               
-              {/* --- SOCIAL TAB --- */}
+              {/* --- SOCIAL TAB (CLEANED) --- */}
               {activeTab === 'social' && (
                 <div className="space-y-8">
                   <div className="flex items-center gap-4">
@@ -225,7 +219,7 @@ function BaseStationUI() {
                       <span className="text-5xl group-hover:scale-110 transition-transform">☀️</span>
                       <div className="text-center">
                         <span className="block font-bold text-orange-200 text-lg">Say GM</span>
-                        <span className="text-xs text-orange-200/50">0.0001 ETH</span>
+                        {/* TEXT REMOVED HERE */}
                       </div>
                     </button>
 
@@ -236,7 +230,7 @@ function BaseStationUI() {
                       <span className="text-5xl group-hover:scale-110 transition-transform">🌙</span>
                       <div className="text-center">
                         <span className="block font-bold text-indigo-200 text-lg">Say GN</span>
-                        <span className="text-xs text-indigo-200/50">0.0001 ETH</span>
+                        {/* TEXT REMOVED HERE */}
                       </div>
                     </button>
                   </div>

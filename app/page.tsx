@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { 
   useWriteContract, 
   useWaitForTransactionReceipt, 
   useAccount, 
   useConnect, 
+  useDisconnect, // Added Disconnect Hook
   WagmiProvider, 
   createConfig, 
   http 
@@ -16,7 +16,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { injected } from 'wagmi/connectors';
 import { parseEther } from 'viem';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, MessageCircle, Wallet, Layers, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
+import { Rocket, MessageCircle, Wallet, Layers, Link as LinkIcon, CheckCircle2, LogOut } from 'lucide-react';
 
 // --- 1. CONFIGURATION ---
 const config = createConfig({
@@ -28,7 +28,7 @@ const config = createConfig({
 
 const queryClient = new QueryClient();
 
-// REPLACE WITH YOUR NEW REDEPLOYED ADDRESSES
+// REPLACE WITH YOUR REDEPLOYED CONTRACT ADDRESSES
 const SOCIAL_CONTRACT_ADDRESS = '0xdB21A0bA90906B76d96b26783caF04e9BB0623e4';
 const TOKEN_DEPLOYER_ADDRESS = '0x3A9fc2B695E93d2754da5c832bE91542F81d423a';
 const NFT_DEPLOYER_ADDRESS = '0x0931Cd25fABb8794E948a43829Da3c4d01147E23';
@@ -46,7 +46,8 @@ export default function Page() {
 
 function BaseStationUI() {
   const { isConnected, address } = useAccount();
-  const { connect, connectors } = useConnect(); 
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect(); // Get the disconnect function
   
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -63,14 +64,14 @@ function BaseStationUI() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
 
-  // --- ACTIONS (UPDATED FEES TO 0.000001) ---
+  // --- ACTIONS ---
   const handleSocial = (action: string) => {
     writeContract({
       address: SOCIAL_CONTRACT_ADDRESS as `0x${string}`,
       abi: [{"name": "saySomething", "inputs": [{"type":"string"},{"type":"string"}], "outputs": [], "stateMutability": "payable", "type": "function"}],
       functionName: 'saySomething',
       args: [action, `Based ${action}!`],
-      value: parseEther('0.000001'), // UPDATED FEE
+      value: parseEther('0.000001'),
     });
   };
 
@@ -81,7 +82,7 @@ function BaseStationUI() {
       abi: [{"name": "deployToken", "inputs": [{"type":"string"},{"type":"string"},{"type":"uint256"}], "outputs": [], "stateMutability": "payable", "type": "function"}],
       functionName: 'deployToken',
       args: [tokenName, tokenSymbol, BigInt(tokenSupply)],
-      value: parseEther('0.000001'), // UPDATED FEE
+      value: parseEther('0.000001'),
     });
   };
 
@@ -92,7 +93,7 @@ function BaseStationUI() {
       abi: [{"name": "deployCollection", "inputs": [{"type":"string"},{"type":"string"}], "outputs": [], "stateMutability": "payable", "type": "function"}],
       functionName: 'deployCollection',
       args: [collectionUri, collectionName],
-      value: parseEther('0.000001'), // UPDATED FEE
+      value: parseEther('0.000001'),
     });
   };
 
@@ -101,7 +102,7 @@ function BaseStationUI() {
       address: VIP_PASS_ADDRESS as `0x${string}`,
       abi: [{"name": "mint", "inputs": [], "outputs": [], "stateMutability": "payable", "type": "function"}],
       functionName: 'mint',
-      value: parseEther('0.00001'), // VIP Price (Keep as is or change to 0.000001)
+      value: parseEther('0.00001'),
     });
   };
 
@@ -130,6 +131,7 @@ function BaseStationUI() {
             <span className="text-xl font-bold tracking-tight">Base <span className="text-blue-500">Station</span></span>
           </div>
 
+          {/* CONNECT / DISCONNECT LOGIC */}
           {mounted && !isConnected ? (
             <button 
               onClick={() => connect({ connector: connectors[0] })}
@@ -140,9 +142,19 @@ function BaseStationUI() {
             </button>
           ) : (
             mounted && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-blue-900/30 border border-blue-500/30 rounded-full text-blue-400 font-mono text-sm">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                {address?.slice(0,6)}...{address?.slice(-4)}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-4 py-2 bg-blue-900/30 border border-blue-500/30 rounded-full text-blue-400 font-mono text-sm">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  {address?.slice(0,6)}...{address?.slice(-4)}
+                </div>
+                {/* DISCONNECT BUTTON */}
+                <button 
+                  onClick={() => disconnect()}
+                  className="p-2 bg-white/5 hover:bg-red-500/20 hover:text-red-500 text-gray-400 rounded-full transition-all border border-white/5 hover:border-red-500/30"
+                  title="Disconnect"
+                >
+                  <LogOut size={18} />
+                </button>
               </div>
             )
           )}
@@ -198,7 +210,7 @@ function BaseStationUI() {
               className="bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-8 min-h-[420px]"
             >
               
-              {/* --- SOCIAL TAB (CLEANED) --- */}
+              {/* --- SOCIAL TAB --- */}
               {activeTab === 'social' && (
                 <div className="space-y-8">
                   <div className="flex items-center gap-4">
@@ -219,7 +231,6 @@ function BaseStationUI() {
                       <span className="text-5xl group-hover:scale-110 transition-transform">☀️</span>
                       <div className="text-center">
                         <span className="block font-bold text-orange-200 text-lg">Say GM</span>
-                        {/* TEXT REMOVED HERE */}
                       </div>
                     </button>
 
@@ -230,7 +241,6 @@ function BaseStationUI() {
                       <span className="text-5xl group-hover:scale-110 transition-transform">🌙</span>
                       <div className="text-center">
                         <span className="block font-bold text-indigo-200 text-lg">Say GN</span>
-                        {/* TEXT REMOVED HERE */}
                       </div>
                     </button>
                   </div>
@@ -349,19 +359,21 @@ function BaseStationUI() {
 
                   <div className="flex flex-col items-center text-center">
                     
-                    {/* VIP Image */}
+                    {/* VIP Image - FIXED (Using standard img tag) */}
                     <div className="w-32 h-32 rounded-full mb-6 overflow-hidden border-2 border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.3)] bg-black relative">
-                       <Image 
+                       <img 
                           src="/vip-logo.png" 
                           alt="VIP"
-                          fill
-                          style={{ objectFit: 'cover' }}
+                          className="w-full h-full object-cover"
                           onError={(e) => { 
-                             const target = e.target as HTMLImageElement;
-                             target.style.display = 'none'; 
+                             e.currentTarget.style.display = 'none'; 
+                             // Show fallback if this fails
+                             const sibling = e.currentTarget.nextElementSibling;
+                             if(sibling) (sibling as HTMLElement).style.display = 'flex';
                           }}
                        />
-                       <div className="absolute inset-0 flex items-center justify-center -z-10 text-4xl">👑</div>
+                       {/* Fallback Icon */}
+                       <div className="absolute inset-0 hidden items-center justify-center -z-10 text-4xl bg-black w-full h-full">👑</div>
                     </div>
                     
                     <h3 className="text-2xl font-bold text-white mb-2">Base VIP Pass</h3>

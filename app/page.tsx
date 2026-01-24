@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { 
   useWriteContract, 
   useWaitForTransactionReceipt, 
   useAccount, 
+  useConnect, // Import useConnect here properly
   WagmiProvider, 
   createConfig, 
   http 
@@ -21,7 +22,8 @@ import { Rocket, MessageCircle, Wallet, Layers, Link as LinkIcon, CheckCircle2 }
 const config = createConfig({
   chains: [base],
   transports: { [base.id]: http() },
-  connectors: [injected()],
+  connectors: [injected()], // This enables MetaMask/Coinbase Wallet
+  ssr: true, // Fixes hydration issues
 });
 
 const queryClient = new QueryClient();
@@ -43,13 +45,16 @@ export default function Page() {
   );
 }
 
-// --- 3. THE SMOOTH UI COMPONENT ---
+// --- 3. THE UI COMPONENT ---
 function BaseStationUI() {
   const { isConnected, address } = useAccount();
-  const { connect } = require('wagmi'); 
-  const { connectors } = require('wagmi');
+  const { connect, connectors } = useConnect(); // The correct way to get the connect function
+  
+  // Fix for "Hydration Error" (Button working on server but not client)
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
-  const [activeTab, setActiveTab] = useState('social'); // Default to Social
+  const [activeTab, setActiveTab] = useState('social'); 
 
   // Form States
   const [tokenName, setTokenName] = useState('');
@@ -63,7 +68,6 @@ function BaseStationUI() {
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
 
   // --- ACTIONS ---
-
   const handleSocial = (action: string) => {
     writeContract({
       address: SOCIAL_CONTRACT_ADDRESS as `0x${string}`,
@@ -130,8 +134,10 @@ function BaseStationUI() {
             <span className="text-xl font-bold tracking-tight">Base <span className="text-blue-500">Station</span></span>
           </div>
 
-          {!isConnected ? (
+          {/* CONNECT WALLET BUTTON */}
+          {mounted && !isConnected ? (
             <button 
+              // Connects to the first available connector (MetaMask/Browser Wallet)
               onClick={() => connect({ connector: connectors[0] })}
               className="bg-white text-black px-6 py-2.5 rounded-full font-bold flex items-center gap-2 hover:bg-gray-200 transition-colors"
             >
@@ -139,10 +145,12 @@ function BaseStationUI() {
               Connect Wallet
             </button>
           ) : (
-            <div className="flex items-center gap-2 px-4 py-2 bg-blue-900/30 border border-blue-500/30 rounded-full text-blue-400 font-mono text-sm">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              {address?.slice(0,6)}...{address?.slice(-4)}
-            </div>
+            mounted && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-blue-900/30 border border-blue-500/30 rounded-full text-blue-400 font-mono text-sm">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                {address?.slice(0,6)}...{address?.slice(-4)}
+              </div>
+            )
           )}
         </div>
       </nav>
@@ -347,10 +355,10 @@ function BaseStationUI() {
 
                   <div className="flex flex-col items-center text-center">
                     
-                    {/* VIP Image - NOW USING YOUR CUSTOM IMAGE */}
+                    {/* VIP Image */}
                     <div className="w-32 h-32 rounded-full mb-6 overflow-hidden border-2 border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.3)] bg-black relative">
                        <Image 
-                          src="/vip-logo.jpg" 
+                          src="/vip-logo.png" 
                           alt="VIP"
                           fill
                           style={{ objectFit: 'cover' }}
@@ -359,7 +367,6 @@ function BaseStationUI() {
                              target.style.display = 'none'; 
                           }}
                        />
-                       {/* Fallback if no image */}
                        <div className="absolute inset-0 flex items-center justify-center -z-10 text-4xl">👑</div>
                     </div>
                     

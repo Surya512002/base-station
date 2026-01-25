@@ -6,7 +6,7 @@ import {
   useWaitForTransactionReceipt, 
   useAccount, 
   useConnect, 
-  useDisconnect, // Added Disconnect Hook
+  useDisconnect,
   WagmiProvider, 
   createConfig, 
   http 
@@ -15,8 +15,8 @@ import { base } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { injected } from 'wagmi/connectors';
 import { parseEther } from 'viem';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, MessageCircle, Wallet, Layers, Link as LinkIcon, CheckCircle2, LogOut } from 'lucide-react';
+import { motion, AnimatePresence, Variants } from 'framer-motion'; // Added Variants type import
+import { Rocket, MessageCircle, Wallet, Layers, Crown, LogOut, Sparkles, Zap, CheckCircle2, ArrowRight } from 'lucide-react';
 
 // --- 1. CONFIGURATION ---
 const config = createConfig({
@@ -28,10 +28,10 @@ const config = createConfig({
 
 const queryClient = new QueryClient();
 
-// REPLACE WITH YOUR REDEPLOYED CONTRACT ADDRESSES
+// ⚠️ PASTE YOUR ADDRESSES HERE ⚠️
 const SOCIAL_CONTRACT_ADDRESS = '0xdB21A0bA90906B76d96b26783caF04e9BB0623e4';
-const TOKEN_DEPLOYER_ADDRESS = '0xf6845183045a542100E52d45C82b1637B9A4182A';
-const NFT_DEPLOYER_ADDRESS = '0xA3f4DfD56904a4f97183D46a2f84CC5b76224D9f';
+const TOKEN_DEPLOYER_ADDRESS = '0x6Bb7037FdD89d29585991535Ce07212744C808F4';
+const NFT_DEPLOYER_ADDRESS = '0x77FfC8Ef3F5964E46BCb86441A286F136815ab6a';
 const VIP_PASS_ADDRESS = '0x19De432E6454c78f96d20afc641264A91fCFE46b';
 
 export default function Page() {
@@ -47,19 +47,9 @@ export default function Page() {
 function BaseStationUI() {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
-  const { disconnect } = useDisconnect(); // Get the disconnect function
-  
+  const { disconnect } = useDisconnect();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-
-  const [activeTab, setActiveTab] = useState('social'); 
-
-  // Form States
-  const [tokenName, setTokenName] = useState('');
-  const [tokenSymbol, setTokenSymbol] = useState('');
-  const [tokenSupply, setTokenSupply] = useState('1000000');
-  const [collectionName, setCollectionName] = useState('');
-  const [collectionUri, setCollectionUri] = useState('');
 
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
@@ -76,23 +66,21 @@ function BaseStationUI() {
   };
 
   const handleDeployToken = () => {
-    if (!tokenName || !tokenSymbol) return;
     writeContract({
       address: TOKEN_DEPLOYER_ADDRESS as `0x${string}`,
-      abi: [{"name": "deployToken", "inputs": [{"type":"string"},{"type":"string"},{"type":"uint256"}], "outputs": [], "stateMutability": "payable", "type": "function"}],
+      abi: [{"name": "deployToken", "inputs": [], "outputs": [], "stateMutability": "payable", "type": "function"}],
       functionName: 'deployToken',
-      args: [tokenName, tokenSymbol, BigInt(tokenSupply)],
+      args: [], // Zero arguments = Lowest Gas
       value: parseEther('0.000001'),
     });
   };
 
   const handleDeployNFT = () => {
-    if (!collectionName || !collectionUri) return;
     writeContract({
       address: NFT_DEPLOYER_ADDRESS as `0x${string}`,
-      abi: [{"name": "deployCollection", "inputs": [{"type":"string"},{"type":"string"}], "outputs": [], "stateMutability": "payable", "type": "function"}],
+      abi: [{"name": "deployCollection", "inputs": [], "outputs": [], "stateMutability": "payable", "type": "function"}],
       functionName: 'deployCollection',
-      args: [collectionUri, collectionName],
+      args: [], // Zero arguments = Lowest Gas
       value: parseEther('0.000001'),
     });
   };
@@ -106,339 +94,164 @@ function BaseStationUI() {
     });
   };
 
-  // --- ANIMATIONS ---
-  const fadeIn = {
-    hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+  // --- STYLES & VARIANTS (FIXED TYPE ERROR) ---
+  const floatingVariant: Variants = {
+    animate: {
+      y: [0, -20, 0],
+      rotate: [0, 5, 0],
+      transition: { 
+        duration: 6, 
+        repeat: Infinity, 
+        ease: "easeInOut" // Now correctly typed
+      }
+    }
   };
 
+  const cardBase = "w-full bg-blue-950/30 backdrop-blur-xl border border-blue-400/20 rounded-[30px] shadow-[0_0_50px_rgba(0,100,255,0.1)] overflow-hidden relative group";
+  const glowButton = "bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold py-4 px-6 rounded-2xl transition-all transform active:scale-98 shadow-[0_0_30px_rgba(0,150,255,0.3)] flex items-center justify-center gap-2";
+
   return (
-    <div className="min-h-screen bg-[#000510] text-white font-sans selection:bg-blue-500 selection:text-white overflow-x-hidden relative">
+    <div className="min-h-screen bg-[#000212] text-white font-sans overflow-x-hidden relative">
       
-      {/* Background Ambience */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px]" />
+      {/* Animated Background */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <motion.div variants={floatingVariant} animate="animate" className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-blue-600/20 rounded-full blur-[150px] opacity-40" />
+        <motion.div variants={floatingVariant} animate="animate" transition={{ delay: 2 }} className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-cyan-600/20 rounded-full blur-[150px] opacity-40" />
       </div>
 
       {/* Navbar */}
-      <nav className="relative z-10 border-b border-white/10 bg-black/50 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
-              <div className="w-3 h-3 bg-white rounded-full" />
+      <nav className={`sticky top-0 z-30 h-20 flex items-center transition-all ${mounted ? 'bg-[#000212]/80 backdrop-blur-md border-b border-blue-500/10' : ''}`}>
+        <div className="max-w-5xl mx-auto px-6 w-full flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <Zap fill="white" size={20} />
             </div>
-            <span className="text-xl font-bold tracking-tight">Base <span className="text-blue-500">Station</span></span>
+            <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white to-blue-300 text-transparent bg-clip-text hidden sm:block">
+              BASE<span className="text-blue-500">STATION</span>
+            </span>
           </div>
 
-          {/* CONNECT / DISCONNECT LOGIC */}
           {mounted && !isConnected ? (
-            <button 
-              onClick={() => connect({ connector: connectors[0] })}
-              className="bg-white text-black px-6 py-2.5 rounded-full font-bold flex items-center gap-2 hover:bg-gray-200 transition-colors"
-            >
-              <Wallet size={18} />
-              Connect Wallet
-            </button>
+             <button onClick={() => connect({ connector: connectors[0] })} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-full font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-500/20">
+             <Wallet size={18} /> Connect
+           </button>
           ) : (
             mounted && (
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-4 py-2 bg-blue-900/30 border border-blue-500/30 rounded-full text-blue-400 font-mono text-sm">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <div className="flex items-center gap-2 px-4 py-2 bg-blue-950/50 border border-blue-400/30 rounded-full text-blue-300 font-mono font-medium text-sm">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                   {address?.slice(0,6)}...{address?.slice(-4)}
                 </div>
-                {/* DISCONNECT BUTTON */}
-                <button 
-                  onClick={() => disconnect()}
-                  className="p-2 bg-white/5 hover:bg-red-500/20 hover:text-red-500 text-gray-400 rounded-full transition-all border border-white/5 hover:border-red-500/30"
-                  title="Disconnect"
-                >
-                  <LogOut size={18} />
-                </button>
+                <button onClick={() => disconnect()} className="p-2 bg-blue-950/50 border border-blue-400/30 text-blue-300 hover:text-red-400 hover:border-red-400/30 rounded-full transition-all"><LogOut size={16} /></button>
               </div>
             )
           )}
         </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="relative z-10 max-w-6xl mx-auto px-6 py-12">
+      {/* Main Content - LINEAR LAYOUT */}
+      <main className="relative z-10 max-w-2xl mx-auto px-6 py-12 flex flex-col gap-8 pb-32">
         
         {/* Header */}
-        <motion.div 
-          initial="hidden" animate="visible" variants={fadeIn}
-          className="text-center mb-12"
-        >
-          <span className="inline-block py-1 px-3 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium mb-4">
-            Base Network Utility 🔵
-          </span>
-          <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-b from-white to-gray-500 text-transparent bg-clip-text">
-            Build. Post. Mint.
+        <div className="text-center mb-4">
+          <h1 className="text-4xl md:text-5xl font-black mb-4 bg-gradient-to-b from-white via-blue-100 to-blue-400 text-transparent bg-clip-text">
+            Build On Base.
           </h1>
+          <p className="text-blue-200/60 text-lg">
+            Deploy contracts instantly. No code required.
+          </p>
+        </div>
+
+        {/* 1. VIP PASS (Premium Banner) */}
+        <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className={`${cardBase} border-yellow-500/30`}>
+            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 to-transparent opacity-40"></div>
+            <div className="p-6 flex flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-full border-2 border-yellow-400/50 overflow-hidden bg-black flex-shrink-0 relative">
+                       <img src="/vip-logo.png" alt="VIP" className="w-full h-full object-cover" onError={(e) => e.currentTarget.style.display = 'none'} />
+                       <div className="absolute inset-0 flex items-center justify-center -z-10"><Crown size={24} className="text-yellow-400"/></div>
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-bold text-white flex items-center gap-2">VIP Pass <Sparkles size={16} className="text-yellow-400" /></h3>
+                        <p className="text-xs text-yellow-200/70 font-mono mt-1">0.00001 ETH • 100k Supply</p>
+                    </div>
+                </div>
+                <button onClick={handleMintVIP} className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-6 py-2 rounded-xl text-sm transition-transform active:scale-95 shadow-lg shadow-yellow-500/20">
+                    Mint
+                </button>
+            </div>
         </motion.div>
 
-        <div className="grid md:grid-cols-12 gap-8">
-          
-          {/* LEFT: Tools Panel */}
-          <div className="md:col-span-8">
-            
-            {/* Tabs */}
-            <div className="flex gap-2 mb-6 p-1 bg-white/5 rounded-xl w-fit">
-              {['social', 'token', 'nft'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-6 py-2 rounded-lg font-medium transition-all ${
-                    activeTab === tab 
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' 
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  {tab === 'social' && '💬 Social'}
-                  {tab === 'token' && '🚀 Token'}
-                  {tab === 'nft' && '🎨 NFT'}
-                </button>
-              ))}
+        {/* 2. SOCIAL (Grid) */}
+        <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.1}} className={cardBase}>
+            <div className="p-6">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-orange-500/20 rounded-lg text-orange-400"><MessageCircle size={20} /></div>
+                    <h2 className="text-xl font-bold">Onchain Social</h2>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <button onClick={() => handleSocial("GM")} className="h-24 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all flex flex-col items-center justify-center gap-2 group">
+                        <span className="text-3xl group-hover:scale-110 transition-transform">☀️</span>
+                        <span className="font-bold">GM</span>
+                    </button>
+                    <button onClick={() => handleSocial("GN")} className="h-24 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all flex flex-col items-center justify-center gap-2 group">
+                        <span className="text-3xl group-hover:scale-110 transition-transform">🌙</span>
+                        <span className="font-bold">GN</span>
+                    </button>
+                </div>
             </div>
+        </motion.div>
 
-            {/* Active Tool Area */}
-            <motion.div 
-              key={activeTab}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3 }}
-              className="bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-8 min-h-[420px]"
-            >
-              
-              {/* --- SOCIAL TAB --- */}
-              {activeTab === 'social' && (
-                <div className="space-y-8">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-blue-500/20 rounded-xl text-blue-400">
-                      <MessageCircle size={32} />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold">Onchain Social</h2>
-                      <p className="text-gray-400">Interact with the Base blockchain directly.</p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <button 
-                      onClick={() => handleSocial("GM")}
-                      className="h-40 rounded-2xl bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-orange-500/20 hover:border-orange-500 hover:bg-orange-500/20 transition-all group flex flex-col items-center justify-center gap-3"
-                    >
-                      <span className="text-5xl group-hover:scale-110 transition-transform">☀️</span>
-                      <div className="text-center">
-                        <span className="block font-bold text-orange-200 text-lg">Say GM</span>
-                      </div>
-                    </button>
-
-                    <button 
-                      onClick={() => handleSocial("GN")}
-                      className="h-40 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 hover:border-indigo-500 hover:bg-indigo-500/20 transition-all group flex flex-col items-center justify-center gap-3"
-                    >
-                      <span className="text-5xl group-hover:scale-110 transition-transform">🌙</span>
-                      <div className="text-center">
-                        <span className="block font-bold text-indigo-200 text-lg">Say GN</span>
-                      </div>
-                    </button>
-                  </div>
+        {/* 3. TOKEN DEPLOY (Linear Card) */}
+        <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.2}} className={cardBase}>
+            <div className="p-6 md:p-8 flex flex-col items-center text-center gap-6">
+                <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(34,197,94,0.2)]">
+                   <Rocket size={32} className="text-green-400" />
                 </div>
-              )}
-
-              {/* --- TOKEN TAB --- */}
-              {activeTab === 'token' && (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-4 mb-2">
-                    <div className="p-3 bg-green-500/20 rounded-xl text-green-400">
-                      <Rocket size={32} />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold">Token Launcher</h2>
-                      <p className="text-gray-400">Deploy ERC-20 standard tokens.</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 max-w-lg">
-                    <div>
-                      <label className="text-xs uppercase text-gray-500 font-bold tracking-wider ml-1">Name</label>
-                      <input 
-                        className="w-full bg-black/40 border border-white/10 rounded-xl p-4 mt-1 focus:border-blue-500 outline-none transition-colors text-lg"
-                        placeholder="e.g. BaseCat"
-                        onChange={(e) => setTokenName(e.target.value)}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-xs uppercase text-gray-500 font-bold tracking-wider ml-1">Symbol</label>
-                        <input 
-                          className="w-full bg-black/40 border border-white/10 rounded-xl p-4 mt-1 focus:border-blue-500 outline-none text-lg"
-                          placeholder="BCAT"
-                          onChange={(e) => setTokenSymbol(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs uppercase text-gray-500 font-bold tracking-wider ml-1">Supply</label>
-                        <input 
-                          type="number"
-                          className="w-full bg-black/40 border border-white/10 rounded-xl p-4 mt-1 focus:border-blue-500 outline-none text-lg"
-                          placeholder="1M"
-                          onChange={(e) => setTokenSupply(e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <button 
-                      onClick={handleDeployToken}
-                      className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl mt-4 shadow-lg shadow-green-900/20 active:scale-98 transition-all"
-                    >
-                      🚀 Deploy Token
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* --- NFT TAB --- */}
-              {activeTab === 'nft' && (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-4 mb-2">
-                    <div className="p-3 bg-purple-500/20 rounded-xl text-purple-400">
-                      <Layers size={32} />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold">NFT Collection</h2>
-                      <p className="text-gray-400">Deploy ERC-1155 collections.</p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4 max-w-lg">
-                      <div>
-                        <label className="text-xs uppercase text-gray-500 font-bold tracking-wider ml-1 flex items-center gap-2">
-                           <LinkIcon size={12} /> Metadata URI (IPFS)
-                        </label>
-                        <input 
-                          className="w-full bg-black/40 border border-white/10 rounded-xl p-4 mt-1 focus:border-blue-500 outline-none font-mono text-sm text-blue-300"
-                          placeholder="ipfs://QmYourMetadataCID..."
-                          onChange={(e) => setCollectionUri(e.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-xs uppercase text-gray-500 font-bold tracking-wider ml-1">Collection Name</label>
-                        <input 
-                          className="w-full bg-black/40 border border-white/10 rounded-xl p-4 mt-1 focus:border-blue-500 outline-none text-lg"
-                          placeholder="e.g. Base Art"
-                          onChange={(e) => setCollectionName(e.target.value)}
-                        />
-                      </div>
-
-                      <button 
-                        onClick={handleDeployNFT}
-                        className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl mt-4 shadow-lg shadow-purple-900/20 active:scale-98 transition-all"
-                      >
-                        🎨 Create Collection
-                      </button>
-                  </div>
-                </div>
-              )}
-
-            </motion.div>
-          </div>
-
-          {/* RIGHT: VIP Pass */}
-          <div className="md:col-span-4">
-            <div className="sticky top-10">
-              <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-                <div className="relative bg-gray-900 ring-1 ring-white/10 rounded-3xl p-8 overflow-hidden">
-                  
-                  <div className="absolute top-0 right-0 bg-yellow-500 text-black text-xs font-bold px-4 py-1.5 rounded-bl-2xl">
-                    LIMITED
-                  </div>
-
-                  <div className="flex flex-col items-center text-center">
-                    
-                    {/* VIP Image - FIXED (Using standard img tag) */}
-                    <div className="w-32 h-32 rounded-full mb-6 overflow-hidden border-2 border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.3)] bg-black relative">
-                       <img 
-                          src="/vip-logo.png" 
-                          alt="VIP"
-                          className="w-full h-full object-cover"
-                          onError={(e) => { 
-                             e.currentTarget.style.display = 'none'; 
-                             // Show fallback if this fails
-                             const sibling = e.currentTarget.nextElementSibling;
-                             if(sibling) (sibling as HTMLElement).style.display = 'flex';
-                          }}
-                       />
-                       {/* Fallback Icon */}
-                       <div className="absolute inset-0 hidden items-center justify-center -z-10 text-4xl bg-black w-full h-full">👑</div>
-                    </div>
-                    
-                    <h3 className="text-2xl font-bold text-white mb-2">Base VIP Pass</h3>
-                    <p className="text-gray-400 text-sm mb-8 leading-relaxed">
-                      Mint the exclusive VIP badge to prove you were here early. Only 100,000 exist.
+                <div>
+                    <h2 className="text-2xl font-bold mb-2">Deploy Token</h2>
+                    <p className="text-blue-200/60 text-sm max-w-sm">
+                        Launch a standard ERC-20 token instantly. <br/>Fixed supply of 1,000,000.
                     </p>
-
-                    <div className="w-full bg-white/5 rounded-xl p-4 mb-6 border border-white/5">
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className="text-gray-400">Price</span>
-                        <span className="text-white font-mono font-bold">0.00001 ETH</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Network</span>
-                        <span className="text-blue-400">Base Mainnet</span>
-                      </div>
-                    </div>
-
-                    <button 
-                      onClick={handleMintVIP}
-                      className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-4 rounded-xl transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-yellow-900/20"
-                    >
-                      Mint VIP Pass ✨
-                    </button>
-                  </div>
-
                 </div>
-              </div>
+                <button onClick={handleDeployToken} className={`${glowButton} w-full from-green-500 to-teal-500 hover:from-green-400 hover:to-teal-400 shadow-[0_0_30px_rgba(34,197,94,0.3)]`}>
+                  Deploy Now <ArrowRight size={18} />
+                </button>
             </div>
-          </div>
+        </motion.div>
 
-        </div>
+        {/* 4. NFT DEPLOY (Linear Card) */}
+        <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.3}} className={cardBase}>
+            <div className="p-6 md:p-8 flex flex-col items-center text-center gap-6">
+                 <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(168,85,247,0.2)]">
+                   <Layers size={32} className="text-purple-400" />
+                </div>
+                <div>
+                    <h2 className="text-2xl font-bold mb-2">Deploy NFT Collection</h2>
+                    <p className="text-blue-200/60 text-sm max-w-sm">
+                        Launch a new ERC-1155 Collection. <br/>"Blank Slate" contract for lowest gas fees.
+                    </p>
+                </div>
+                <button onClick={handleDeployNFT} className={`${glowButton} w-full from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 shadow-[0_0_30px_rgba(168,85,247,0.3)]`}>
+                  Deploy Now <ArrowRight size={18} />
+                </button>
+            </div>
+        </motion.div>
+
       </main>
 
-      {/* Notifications */}
+      {/* Notification Toast */}
       <AnimatePresence>
         {(isPending || isConfirmed || error) && (
-          <motion.div 
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="fixed bottom-10 right-6 z-50 max-w-md w-full"
-          >
-            {isPending && (
-              <div className="bg-blue-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border border-blue-400">
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <div className="font-medium">Confirming transaction...</div>
-              </div>
-            )}
-            {isConfirmed && (
-              <div className="bg-green-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border border-green-400">
-                <CheckCircle2 size={24} />
-                <div className="font-medium">Transaction Successful!</div>
-              </div>
-            )}
-            {error && (
-              <div className="bg-red-600 text-white px-6 py-4 rounded-2xl shadow-2xl border border-red-400">
-                <div className="font-bold mb-1">Error</div>
-                <div className="text-sm opacity-90">{(error as any).shortMessage || error.message.slice(0, 100)}</div>
-              </div>
-            )}
+          <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-6 left-0 right-0 mx-auto z-50 max-w-sm w-full px-4">
+             <div className="bg-[#000212] border border-blue-500/30 rounded-2xl p-4 flex items-center gap-4 shadow-2xl relative overflow-hidden">
+                {isPending && <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"/> <span className="font-bold text-sm">Processing...</span></>}
+                {isConfirmed && <><CheckCircle2 size={20} className="text-green-500"/> <span className="font-bold text-sm">Success!</span></>}
+                {error && <><LogOut size={20} className="text-red-500 rotate-45"/> <span className="font-bold text-sm text-red-500">Error</span></>}
+             </div>
           </motion.div>
         )}
       </AnimatePresence>
-
     </div>
   );
 }

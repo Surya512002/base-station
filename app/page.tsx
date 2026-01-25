@@ -166,7 +166,7 @@ function BaseStationUI() {
         {/* 1. VIP PASS */}
         <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className={`${cardBase} border-yellow-500/30`}>
             <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 to-transparent opacity-40"></div>
-            <div className="p-6 flex flex-row items-center justify-between gap-4">
+            <div className="relative z-10 p-6 flex flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <div className="w-16 h-16 rounded-full border-2 border-yellow-400/50 overflow-hidden bg-black flex-shrink-0 relative">
                        <img src="/vip-logo.png" alt="VIP" className="w-full h-full object-cover" onError={(e) => e.currentTarget.style.display = 'none'} />

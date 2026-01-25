@@ -17,7 +17,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { injected } from 'wagmi/connectors';
 import { parseEther } from 'viem';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, MessageCircle, Wallet, Crown, LogOut, Sparkles, Zap, CheckCircle2, Hand } from 'lucide-react';
+import { MessageCircle, Wallet, Crown, LogOut, Sparkles, Zap, Hand } from 'lucide-react';
 
 // --- 1. CONFIGURATION ---
 const config = createConfig({
@@ -34,7 +34,7 @@ const COUNTER_CONTRACT_ADDRESS = '0x313161Cbd9373d84648c5CC831811aF5BcF557e1';
 const VIP_PASS_ADDRESS = '0x19De432E6454c78f96d20afc641264A91fCFE46b';
 const SOCIAL_CONTRACT_ADDRESS = '0xdB21A0bA90906B76d96b26783caF04e9BB0623e4';
 
-// ABI for the Counter (So we can read the number)
+// ABI for the Counter
 const COUNTER_ABI = [
   {"inputs":[],"name":"tap","outputs":[],"stateMutability":"nonpayable","type":"function"},
   {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"newTotal","type":"uint256"}],"name":"Tapped","type":"event"},
@@ -58,7 +58,10 @@ function BaseStationUI() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // --- READ THE TOTAL TAPS ---
+  // --- NEW: STATE FOR AUTO-HIDING CELEBRATION ---
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  // --- READ TOTAL TAPS ---
   const { data: totalTapsData, refetch: refetchTaps } = useReadContract({
     address: COUNTER_CONTRACT_ADDRESS as `0x${string}`,
     abi: COUNTER_ABI,
@@ -68,10 +71,18 @@ function BaseStationUI() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
 
-  // Refetch the count when transaction succeeds
+  // --- FIXED: AUTO-HIDE LOGIC ---
   useEffect(() => {
     if (isConfirmed) {
-      refetchTaps();
+      refetchTaps();          // 1. Update the number
+      setShowCelebration(true); // 2. Show the "BASED" popup
+      
+      // 3. Start a timer to hide it after 2.5 seconds
+      const timer = setTimeout(() => {
+        setShowCelebration(false);
+      }, 2500);
+
+      return () => clearTimeout(timer);
     }
   }, [isConfirmed, refetchTaps]);
 
@@ -103,7 +114,6 @@ function BaseStationUI() {
     });
   };
 
-  // --- VISUALS ---
   const cardBase = "w-full bg-blue-950/30 backdrop-blur-xl border border-blue-400/20 rounded-[30px] shadow-[0_0_50px_rgba(0,100,255,0.1)] overflow-hidden relative group";
 
   return (
@@ -175,7 +185,7 @@ function BaseStationUI() {
         <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.1}} className={cardBase}>
             <div className="p-10 flex flex-col items-center text-center gap-8 relative">
                 
-                {/* Global Counter Display */}
+                {/* Global Counter */}
                 <div className="flex flex-col items-center">
                   <span className="text-blue-300 uppercase tracking-widest text-xs font-bold mb-2">Global Onchain Taps</span>
                   <div className="text-6xl md:text-7xl font-mono font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-blue-400 drop-shadow-[0_0_30px_rgba(0,100,255,0.4)]">
@@ -186,11 +196,18 @@ function BaseStationUI() {
                 {/* THE BUTTON */}
                 <button 
                   onClick={handleTap}
-                  className="group relative w-48 h-48 rounded-full bg-gradient-to-b from-blue-500 to-blue-700 shadow-[0_0_60px_rgba(0,100,255,0.4)] border-4 border-blue-400/50 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+                  disabled={isPending || isConfirming}
+                  className="group relative w-48 h-48 rounded-full bg-gradient-to-b from-blue-500 to-blue-700 shadow-[0_0_60px_rgba(0,100,255,0.4)] border-4 border-blue-400/50 flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:grayscale"
                 >
                   <div className="absolute inset-0 rounded-full bg-white/20 blur-2xl group-hover:opacity-100 opacity-0 transition-opacity" />
-                  <Hand size={64} className="text-white drop-shadow-lg" />
-                  <span className="absolute bottom-8 text-sm font-bold text-blue-100">TAP ME</span>
+                  {isPending || isConfirming ? (
+                    <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Hand size={64} className="text-white drop-shadow-lg" />
+                  )}
+                  <span className="absolute bottom-8 text-sm font-bold text-blue-100">
+                    {isPending ? "WAIT..." : "TAP ME"}
+                  </span>
                 </button>
                 
                 <p className="text-sm text-blue-200/50">Cost: ~0.00002 ETH (Basically Free)</p>
@@ -217,21 +234,29 @@ function BaseStationUI() {
 
       </main>
 
-      {/* CELEBRATION OVERLAY */}
+      {/* AUTO-HIDING CELEBRATION OVERLAY */}
       <AnimatePresence>
-        {isConfirmed && (
+        {showCelebration && (
           <motion.div 
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.5 }}
+            transition={{ duration: 0.5, type: "spring" }}
             className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
           >
-            <div className="relative">
-              <div className="absolute inset-0 bg-blue-500 blur-[100px] opacity-30" />
-              <h1 className="text-6xl md:text-8xl font-black text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.8)] text-center">
-                BASED! <br/>
-                <span className="text-4xl text-blue-300">Transaction Confirmed</span>
-              </h1>
+            <div className="relative text-center">
+              <div className="absolute inset-0 bg-blue-500 blur-[120px] opacity-40 rounded-full" />
+              <motion.div 
+                initial={{ y: 20 }} animate={{ y: 0 }}
+                className="relative z-10"
+              >
+                 <h1 className="text-7xl md:text-9xl font-black text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.8)] tracking-tighter italic">
+                  BASED!
+                </h1>
+                <p className="text-2xl md:text-3xl text-blue-300 font-bold mt-2">
+                  Transaction Confirmed
+                </p>
+              </motion.div>
             </div>
           </motion.div>
         )}

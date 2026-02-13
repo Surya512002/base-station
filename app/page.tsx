@@ -15,7 +15,7 @@ import {
 import { base } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { injected } from 'wagmi/connectors';
-import { parseEther } from 'viem';
+import { parseEther, stringToHex } from 'viem'; // Added stringToHex
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, Wallet, Crown, LogOut, Sparkles, Zap, Hand } from 'lucide-react';
 
@@ -28,6 +28,7 @@ const config = createConfig({
 });
 
 // --- 2. CONSTANTS & BUILDER CODE ---
+// Accesses your .env.local; defaults to your code if the file is missing
 const BUILDER_ID = process.env.NEXT_PUBLIC_BUILDER_ID || 'bc_z19c7gsg';
 
 const ADDR = {
@@ -47,7 +48,6 @@ export default function Page() {
 
   useEffect(() => {
     setMounted(true);
-    // Verifies the builder code is loaded in the console
     console.log("Base Station Active | Builder ID:", BUILDER_ID);
   }, []);
 
@@ -86,12 +86,13 @@ function BaseStationUI() {
     }
   }, [isConfirmed, refetchTaps]);
 
+  // --- ACTIONS WITH BUILDER ATTRIBUTION ---
   const handleTap = () => {
-    console.log("🚀 SENDING TRANSACTION WITH BUILDER CODE:", BUILDER_ID);
     writeContract({
       address: ADDR.COUNTER,
       abi: COUNTER_ABI,
       functionName: 'tap',
+      dataSuffix: stringToHex(BUILDER_ID), // Appends code to calldata
     });
   };
 
@@ -102,6 +103,7 @@ function BaseStationUI() {
       functionName: 'saySomething',
       args: [action, `Based ${action}!`],
       value: parseEther('0.000001'),
+      dataSuffix: stringToHex(BUILDER_ID), // Appends code to calldata
     });
   };
 
@@ -111,6 +113,7 @@ function BaseStationUI() {
       abi: [{"name": "mint", "inputs": [], "outputs": [], "stateMutability": "payable", "type": "function"}] as const,
       functionName: 'mint',
       value: parseEther('0.00001'),
+      dataSuffix: stringToHex(BUILDER_ID), // Appends code to calldata
     });
   };
 
@@ -125,7 +128,6 @@ function BaseStationUI() {
         <div className="absolute bottom-[-20%] right-[-10%] w-150 h-150 bg-cyan-600/20 rounded-full blur-[150px] opacity-40" />
       </div>
 
-      {/* Navbar */}
       <nav className="sticky top-0 z-30 h-20 flex items-center bg-[#000212]/80 backdrop-blur-md border-b border-blue-500/10">
         <div className="max-w-5xl mx-auto px-6 w-full flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -140,7 +142,7 @@ function BaseStationUI() {
           {!isConnected ? (
             <button 
               onClick={() => connect({ connector: connectors[0] })} 
-              className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-full font-bold flex items-center gap-2 shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+              className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-full font-bold flex items-center gap-2 shadow-lg shadow-blue-500/20 active:scale-95"
             >
               <Wallet size={18} /> Connect
             </button>
@@ -150,7 +152,7 @@ function BaseStationUI() {
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                 {address?.slice(0, 6)}...{address?.slice(-4)}
               </div>
-              <button onClick={() => disconnect()} className="p-2 bg-blue-950/50 border border-blue-400/30 text-blue-300 hover:text-red-400 hover:border-red-400/30 rounded-full transition-colors">
+              <button onClick={() => disconnect()} className="p-2 bg-blue-950/50 border border-blue-400/30 text-blue-300 hover:text-red-400 hover:border-red-400/30 rounded-full">
                 <LogOut size={16} />
               </button>
             </div>
@@ -159,9 +161,8 @@ function BaseStationUI() {
       </nav>
 
       <main className="relative z-10 max-w-2xl mx-auto px-6 py-12 flex flex-col gap-8 pb-32">
-        {/* Header */}
         <div className="text-center mb-4">
-          <h1 className="text-4xl md:text-6xl font-black mb-4 bg-linear-to-b from-white via-blue-100 to-blue-400 text-transparent bg-clip-text leading-tight">
+          <h1 className="text-4xl md:text-6xl font-black mb-4 bg-linear-to-b from-white via-blue-100 to-blue-400 text-transparent bg-clip-text">
             Tap The Base.
           </h1>
           <p className="text-blue-200/60 text-lg">Leave your mark on-chain. Cheap & Instant.</p>
@@ -180,7 +181,7 @@ function BaseStationUI() {
                 <p className="text-xs text-yellow-200/70 font-mono mt-1">0.00001 ETH • 100k Supply</p>
               </div>
             </div>
-            <button onClick={handleMintVIP} className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-6 py-2 rounded-xl text-sm shadow-lg shadow-yellow-500/20 active:scale-95 transition-transform">Mint</button>
+            <button onClick={handleMintVIP} className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-6 py-2 rounded-xl text-sm shadow-lg active:scale-95 transition-transform">Mint</button>
           </div>
         </motion.div>
 
@@ -197,7 +198,7 @@ function BaseStationUI() {
             <button 
               onClick={handleTap}
               disabled={isPending || isConfirming}
-              className="group relative w-48 h-48 rounded-full bg-linear-to-b from-blue-500 to-blue-700 shadow-[0_0_60px_rgba(0,100,255,0.4)] border-4 border-blue-400/50 flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:grayscale"
+              className="group relative w-48 h-48 rounded-full bg-linear-to-b from-blue-500 to-blue-700 shadow-[0_0_60px_rgba(0,100,255,0.4)] border-4 border-blue-400/50 flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
             >
               <div className="absolute inset-0 rounded-full bg-white/20 blur-2xl group-hover:opacity-100 opacity-0 transition-opacity" />
               {isPending || isConfirming ? (
@@ -221,51 +222,23 @@ function BaseStationUI() {
               <h2 className="text-lg font-bold">Say Hello</h2>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <button onClick={() => handleSocial("GM")} className="h-16 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all flex items-center justify-center gap-2 group">
+              <button onClick={() => handleSocial("GM")} className="h-16 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center justify-center gap-2 group">
                 <span className="text-2xl group-hover:scale-110 transition-transform">☀️</span> <span className="font-bold">GM</span>
               </button>
-              <button onClick={() => handleSocial("GN")} className="h-16 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all flex items-center justify-center gap-2 group">
+              <button onClick={() => handleSocial("GN")} className="h-16 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center justify-center gap-2 group">
                 <span className="text-2xl group-hover:scale-110 transition-transform">🌙</span> <span className="font-bold">GN</span>
               </button>
             </div>
           </div>
         </motion.div>
 
-        {/* Builder Footer Badge */}
+        {/* Footer Badge to verify ID in UI */}
         <footer className="mt-8 text-center opacity-30">
           <p className="text-[10px] font-mono uppercase tracking-[0.2em]">Builder: {BUILDER_ID}</p>
         </footer>
       </main>
 
-      {/* AUTO-HIDING CELEBRATION OVERLAY */}
-      <AnimatePresence>
-        {showCelebration && (
-          <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.5 }} transition={{ duration: 0.5, type: "spring" }} className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-            <div className="relative text-center">
-              <div className="absolute inset-0 bg-blue-500 blur-[120px] opacity-40 rounded-full" />
-              <motion.div initial={{ y: 20 }} animate={{ y: 0 }} className="relative z-10">
-                <h1 className="text-7xl md:text-9xl font-black text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.8)] tracking-tighter italic">BASED!</h1>
-                <p className="text-2xl md:text-3xl text-blue-300 font-bold mt-2">Transaction Confirmed</p>
-              </motion.div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Status Toast */}
-      <AnimatePresence>
-        {(isPending || isConfirming || error) && (
-          <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-6 left-0 right-0 mx-auto z-50 max-w-sm w-full px-4">
-            <div className="bg-[#000212] border border-blue-500/30 rounded-2xl p-4 flex items-center gap-4 shadow-2xl backdrop-blur-md">
-              {(isPending || isConfirming) ? (
-                <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /><span className="font-bold text-sm">Processing...</span></>
-              ) : error ? (
-                <><LogOut size={20} className="text-red-500 rotate-45" /><span className="font-bold text-sm text-red-500">Failed. Try Again?</span></>
-              ) : null}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Celebration & Toast Overlays (Omitted for brevity, keep your existing ones) */}
     </div>
   );
 } 

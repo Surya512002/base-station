@@ -87,6 +87,7 @@ function BaseStationUI() {
   }, [isConfirmed, refetchTaps]);
 
   const handleTap = () => {
+    console.log("🚀 SENDING TRANSACTION WITH BUILDER CODE:", BUILDER_ID);
     writeContract({
       address: ADDR.COUNTER,
       abi: COUNTER_ABI,

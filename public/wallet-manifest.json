@@ -1,14 +1,7 @@
 {
   "name": "Base Station",
-  "description": "Tap the base and leave your mark on-chain.",
-  "url": "https://your-site-url.com",
-  "icons": [
-    {
-      "src": "https://your-site-url.com/icon.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ],
-  "appId": "base-station",
+  "description": "Tap the base.",
+  "url": "https://base-station-y98c.vercel.app/",
+  "appId": "698042402aafa0bc9ad8a52b",
   "builderCode": "bc_z19c7gsg"
 }

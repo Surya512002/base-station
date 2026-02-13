@@ -1,0 +1,14 @@
+{
+  "name": "Base Station",
+  "description": "Tap the base and leave your mark on-chain.",
+  "url": "https://your-site-url.com",
+  "icons": [
+    {
+      "src": "https://your-site-url.com/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "appId": "base-station",
+  "builderCode": "bc_z19c7gsg"
+}

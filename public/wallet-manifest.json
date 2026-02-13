@@ -2,6 +2,13 @@
   "name": "Base Station",
   "description": "Tap the base.",
   "url": "https://base-station-y98c.vercel.app/",
+  "icons": [
+    {
+      "src": "https://base-station-y98c.vercel.app/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ],
   "appId": "698042402aafa0bc9ad8a52b",
   "builderCode": "bc_z19c7gsg"
 }
